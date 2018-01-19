@@ -1,7 +1,10 @@
 # img_note
  	用canvas给图片加注释，并下载图片
+	
  	需要下载的文件：js/jquery-2.1.1.min.js,js/jquery.simple-color.min.js,index.html
+	
  	简单使用步骤：
+	
  	1.选择要加注释的图片
  ![image](https://github.com/sxlcjqq/img_note/blob/master/img/1.png)
  
