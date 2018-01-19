@@ -3,8 +3,8 @@
  	需要下载的文件：js/jquery-2.1.1.min.js,js/jquery.simple-color.min.js,index.html
  	简单使用步骤：
  	1.选择要加注释的图片
- 	![image](https://github.com/sxlcjqq/img_note/blob/master/img/1.png)
- 	2.修改字体选项，注释序号及文字等
+ ![image](https://github.com/sxlcjqq/img_note/blob/master/img/1.png)
+		2.修改字体选项，注释序号及文字等
  	![image](https://github.com/sxlcjqq/img_note/blob/master/img/2.png)
  	3.点击“添加注释”
  	![image](https://github.com/sxlcjqq/img_note/blob/master/img/3.png)
