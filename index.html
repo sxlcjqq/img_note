@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8">
+		<title></title>
+		<style>
+		     #changeImg .f-blue-input {
+            border: 1px solid #1f5173;
+            width: initial;
+            height: 30px;
+            padding-left: 5px;
+        }
+
+        .simpleColorContainer {
+            display: inline-block;
+            vertical-align: middle;
+        }
+
+        .simpleColorDisplay {
+            width: 30px !important;
+            height: 30px !important;
+            border: 1px solid #1f5173 !important;
+        }
+
+        .simpleColorChooser {
+            top: 40px !important;
+            right: 0 !important;
+            left: initial !important;
+            width: 240px !important;
+        }
+        .btnn{border-radius:5px;border:0;width:70px;height:30px;color:#ffffff;font-size:14px;margin: 28px auto;box-shadow: 1px 2px 10px #DAD4D4;cursor:pointer;background-color:#4b86d2; font-size:14px;}
+		</style>
+	</head>
+	<body>
+		<table>
+			<tr>
+				<td>
+					<input type="file" name="file" class="HeadImg_value" index="1" >
+				</td>
+			</tr>
+			<tr>
+				<td>
+					<input type="number" class="f-blue-input" placeholder="请输入字体大小" id="svg_fontSize" value="12"/>
+					<select type="text" class="f-blue-input" placeholder="请选择字体粗细" id="svg_fontWeight" >
+						<option value="normal">normal</option>
+						<option value="bold">bold</option>
+					</select>
+					<input class='simple_color' value='#cc3333' id="svg_color" >
+					<button class="btnn" id="update">修改样式</button>
+				</td>
+			</tr>
+			<tr>
+				<td>
+					<input type="number" class="f-blue-input" placeholder="请输入序号" id="svg_number" />
+					<input type="text" class="f-blue-input" placeholder="请输入注释" id="svg_text" />
+					<select type="text" placeholder="请选择注释位置" id="svg_area" >
+						<option value="左">左</option>
+						<option value="右">右</option>
+					</select>
+			        <select id="svg_line" class="f-blue-input">
+			            <option value="有">有辅助线</option>
+			            <option value="无">无辅助线</option>
+			        </select>
+					<button class="btnn"  id="add">增加注释</button>
+				</td>
+			</tr>
+			<tr>
+				<td>
+					<div style="padding:10px;border:1px solid #000000;min-width: 200px;min-height:200px;display: inline-block;">
+							<div class="svg-wrap" style="display: inline-block;">
+								<svg xmlns="http://www.w3.org/2000/svg" version="1.1" height="190" id="svg1" >
+									<g id="gImg"></g>
+								</svg>
+							</div>
+						</div>
+						<button class="btnn" id="save">保存图片</button>
+					</td>
+			</tr>
+			<tr>
+				<td><img id="tulipS" src="" style="display: none;"/>
+					<!--<input type="number" placeholder="请输入序号" />
+					-->
+					<canvas id="myCanvas" width="100" height="100" style="border:1px solid #d3d3d3;background:#ffffff;display: none;">
+					Your browser does not support the HTML5 canvas tag.
+					</canvas>
+				</td>
+			</tr>
+		</table>
+		
+		<!--<div class="img"></div>-->
+		<!--<img class="drag" src="" style="position: absolute;top: 0;z-index: 1;"/>-->
+	</body>
+	<script src="js/jquery-2.1.1.min.js"></script>
+	<script src="js/jquery.simple-color.min.js"></script>
+	<script>
+	
+	$(document).ready(function(){
+		//首先加载取色插件
+		$('.simple_color').simpleColor({
+		    cellWidth: 15,
+		    cellHeight: 15,
+			displayCSS: { 'display': 'inline-block' },
+		    onSelect: function(hex, element) {
+				attrv.set_svg_param('color',element);
+		    }
+	  	});
+		convertImageToCanvas(imgS,0,0);
+	})
+	var attrv = function(){
+		var svg = document.getElementById('svg1');
+		var gImg = document.getElementById('gImg');
+	    var drag_param = {};//拖动数据
+		var svg_param = {//svg数据
+			path:document.getElementById('svg_path'), //初始化线条
+			firstCircle:null,
+			lastCircle:null
+		};
+		var xy = {
+			first:{
+				x:0,
+				y:0
+			},
+			center:{
+				x:0,
+				y:0
+			},
+			last:{
+				x:0,
+				y:0
+			},
+			texts:{
+				x:0,
+				y:0
+			}
+		};
+		return {
+			set_XY:function(area,xx,yy){
+				xy[area].x = xx||xy[area].x;
+				xy[area].y = yy||xy[area].y;
+			},
+			set_drag_param:function(param,data){
+				drag_param[param] = data;
+			},
+			set_svg_param:function(param,data){
+				svg_param[param] = data;
+			},
+			reset_XY:function(area){
+				xy[area] = {
+					x:0,
+					y:0
+				};
+			},
+			get_svg:function(){
+				return svg;
+			},
+			get_gImg:function(){
+				return gImg;
+			},
+			get_svg_param:function(param){
+				return svg_param[param];
+			},
+			get_Drag_param:function(param){
+				return drag_param[param];
+			},
+			get_XY:function(param){
+				return xy[param];
+			}
+		}
+	}();
+	var myCanvas = document.getElementById("myCanvas");
+	var context = myCanvas.getContext("2d");
+	var imgS = document.getElementById('tulipS');
+	//点击添加注释
+	$('#add').click(function(){
+		attrv.set_svg_param('number',$('#svg_number').val());
+		attrv.set_svg_param('text',$('#svg_text').val());
+		attrv.set_svg_param('color',$('#svg_color').val());
+		attrv.set_svg_param('area',$('#svg_area').val());
+		attrv.set_svg_param('fontSize',$('#svg_fontSize').val());
+		attrv.set_svg_param('fontWeight',$('#svg_fontWeight').val());
+		attrv.set_svg_param('ifLine',(($('#svg_line').val()=='有')?true:false));
+		
+		var g = document.createElementNS('http://www.w3.org/2000/svg','g');
+		var texts = document.createElementNS('http://www.w3.org/2000/svg','text');
+		var ifLine = attrv.get_svg_param('ifLine');
+		
+		if(ifLine){
+			var circle1 = document.createElementNS('http://www.w3.org/2000/svg','circle');
+			var circle2 = document.createElementNS('http://www.w3.org/2000/svg','circle');
+			var circle3 = document.createElementNS('http://www.w3.org/2000/svg','circle');
+			var path4 = document.createElementNS('http://www.w3.org/2000/svg','path');
+		}else{
+			
+		}
+		
+		
+		if(attrv.get_svg_param('area') == '右'){
+			if(ifLine){
+				circle1.setAttribute("cx","20");
+				circle3.setAttribute("cx","100");
+			}
+			texts.setAttribute("x","90");
+			texts.setAttribute("y","30 ");			
+		}else{
+			if(ifLine){
+				circle1.setAttribute("cx","100");
+				circle3.setAttribute("cx","20");
+			}
+			texts.setAttribute("x","5");
+			texts.setAttribute("y","30");
+		}
+		
+		if(ifLine){
+			circle1.setAttribute("cy","50");
+			circle1.setAttribute("r","5");
+			circle1.setAttribute("fill",attrv.get_svg_param('color'));
+			circle1.setAttribute("q_drag","1");
+			circle1.setAttribute("stroke",attrv.get_svg_param('color'));
+			circle1.setAttribute("stroke-width","5");
+			circle1.setAttribute("stroke-opacity","0.4");
+			circle1.setAttribute("style","cursor: move");
+			
+			circle2.setAttribute("cx","50");
+			circle2.setAttribute("cy","50");
+			circle2.setAttribute("r","5");
+			circle2.setAttribute("fill",attrv.get_svg_param('color'));
+			circle2.setAttribute("q_drag","2");
+			circle2.setAttribute("style","cursor: pointer");
+			
+			circle3.setAttribute("cy","50");
+			circle3.setAttribute("r","5");
+			circle3.setAttribute("fill",attrv.get_svg_param('color'));
+			circle3.setAttribute("q_drag","3");
+			circle3.setAttribute("stroke",attrv.get_svg_param('color'));
+			circle3.setAttribute("stroke-width","5");
+			circle3.setAttribute("stroke-opacity","0.4");
+			circle3.setAttribute("style","cursor: pointer");
+			
+			path4.setAttribute("d","M20 50 L50 50 L100 50");
+			path4.setAttribute("fill","none");
+			path4.setAttribute("class","svg_path");
+			path4.setAttribute("stroke",attrv.get_svg_param('color'));
+			path4.setAttribute("stroke-width","1");
+			path4.setAttribute("style","cursor: pointer;");
+		}
+		
+		texts.setAttribute("fill",attrv.get_svg_param('color'));
+		texts.setAttribute("q_drag","4");
+		texts.setAttribute("font-size",attrv.get_svg_param('fontSize'));
+		texts.setAttribute("font-family",'Microsoft YaHei');
+		texts.setAttribute("font-weight",attrv.get_svg_param('fontWeight'));
+		texts.setAttribute("style","cursor: pointer;");
+		
+		if(attrv.get_svg_param('number') && attrv.get_svg_param('text')){
+			texts.appendChild(document.createTextNode(attrv.get_svg_param('number')+'.'+attrv.get_svg_param('text')));
+		}else{
+			texts.appendChild(document.createTextNode(attrv.get_svg_param('number')+' '+attrv.get_svg_param('text')));
+		}
+		
+		if(ifLine){
+	        g.appendChild(circle1);
+	        g.appendChild(circle2);
+	        g.appendChild(circle3);
+	        g.appendChild(path4);
+		}
+        g.appendChild(texts);
+        attrv.get_svg().appendChild(g);
+		DragDrop($(g)).dragStart();
+		$('#update').click();
+	})
+	$('#update').click(function(){//点击修改样式
+		$('#svg_color').val() && attrv.set_svg_param('color',$('#svg_color').val());
+		$('#svg_fontSize').val() && attrv.set_svg_param('fontSize',$('#svg_fontSize').val());
+		$('#svg_fontWeight').val() && attrv.set_svg_param('fontWeight',$('#svg_fontWeight').val());
+		$.each($(attrv.get_svg()).find('circle[q_drag=2]'),function(index,element){
+			element.setAttribute("fill",attrv.get_svg_param('color'));
+		})
+		$.each($(attrv.get_svg()).find('circle[q_drag!=2]'),function(index,element){
+			element.setAttribute("stroke",attrv.get_svg_param('color'));
+			element.setAttribute("fill",attrv.get_svg_param('color'));
+		})
+		$.each($(attrv.get_svg()).find('path'),function(index,element){
+			element.setAttribute("stroke",attrv.get_svg_param('color'));
+		})
+		$.each($(attrv.get_svg()).find('text'),function(index,element){
+			element.setAttribute("fill",attrv.get_svg_param('color'));
+			element.setAttribute("font-size",attrv.get_svg_param('fontSize'));
+			element.setAttribute("font-weight",attrv.get_svg_param('fontWeight'));
+		})
+	})
+	//点击保存图片
+	$('#save').click(function(){
+		$('#gImg').hide();
+		var svgXml = $('.svg-wrap').html();
+
+		var images = new Image();
+		images.src = 'data:image/svg+xml;base64,' + window.btoa(unescape(encodeURIComponent(svgXml))); //给图片对象写入base64编码的svg流
+		images.onload=function(){///////////放onload中试试
+		//		convertImageToCanvas(imgS,0,0);//先画背景图
+				context.drawImage(images, 0, 0);//添加注释图
+				console.log(images.src)
+				
+				var a = document.createElement('a');
+				a.href = myCanvas.toDataURL('image/png');  //将画布内的信息导出为png图片数据
+				a.download = "MapByMathArtSys";  //设定下载名称
+				a.click(); //点击触发下载
+				$('#gImg').show();
+		}
+	})
+	function addImageToSvg(width,height,url) {
+		var svgimg = document.getElementById('svg_img') || document.createElementNS('http://www.w3.org/2000/svg','image');
+        svgimg.setAttributeNS(null,'height',height);
+        svgimg.setAttributeNS(null,'width',width);
+        svgimg.setAttributeNS('http://www.w3.org/1999/xlink','href', url);
+        svgimg.setAttributeNS(null,'x',0);
+        svgimg.setAttributeNS(null,'y',0);
+        svgimg.setAttributeNS(null, 'visibility', 'visible');
+        attrv.get_gImg().appendChild(svgimg);
+		attrv.get_svg().setAttribute('height', height);
+		attrv.get_svg().setAttribute('width', width);
+    }
+	$('.HeadImg_value').change(function () {
+	    var $file = $(this);
+	    var fileObj = $file[0];
+	    if ($file.val()) {
+	        var windowURL = window.URL || window.webkitURL;
+	        var dataURL;
+	        var $pro_img = $('.img');
+	        var img = '';
+	        $pro_img.find('img').remove();
+	        if (fileObj && fileObj.files && fileObj.files[0]) {
+	            dataURL = windowURL.createObjectURL(fileObj.files[0]);
+				imgS.src = dataURL;
+				var img = document.createElement("img");
+　　　　				img.src = dataURL;
+					img.onload = function() {//图片加载完成后 
+		            convertImageToCanvas(img,0,0);
+		        }
+	        }
+	    }
+	})
+		 //把image 转换为 canvas对象  
+		function convertImageToCanvas(image,x,y) {  
+		    // 创建canvas DOM元素，并设置其宽高和图片一样   
+		    myCanvas.width = image.width;  
+		    myCanvas.height = image.height;  
+		    // 坐标(0,0) 表示从此处开始绘制，相当于偏移。  
+		    context.drawImage(image, x, y);  
+			addImageToSvg(image.width,image.height,image.src);
+		}  
+		
+		//拖拽部分
+		var VVG = {};  //命名空间
+		VVG.DOM = {
+		    $: function(id) { //创建方便的选择符
+		        return typeof id == "string" ? document.getElementById(id) : id;
+		    },
+		    bindEvent: function(node, type, func) { //事件绑定方法
+		        if (node.addEventListener) {
+		            node.addEventListener(type, func, false);
+		        } else if (node.attachEvent) {
+		            node.attachEvent("on" + type, func);
+		        } else {
+		            node["on" + type] = func;
+		        }
+		    },
+		    getEvent: function(event) { //获取事件
+		        return event ? event : window.event;
+		    },
+		    getTarget: function(event) { //获取事件目标
+		        return event.target || event.srcElement;
+		    }
+		}
+		document.oncontextmenu = new Function("event.returnValue=false;");
+	    var DragDrop =  function(ele) { //新建一个返回对象的函数
+	        var box = VVG.DOM.$("box"); //获取外围BOX
+	        var dragBox = VVG.DOM.$(ele);//获取需要拖动的BOX
+	        function drag(event) { //事件执行函数
+	            event = VVG.DOM.getEvent(event); 
+	            var target = VVG.DOM.getTarget(event);
+	            var d_str = '';
+	            switch (event.type) {//判断事件类型
+	            case "mousedown":
+	            	d_str = '';
+	                if($(target).attr('q_drag')){ //当事件对象的ID等于要拖动的BOX的ID时
+		            	if(3 == event.which){//点击右键----删除当前注释
+		            		$(event.target).parents('g').remove();
+		            	}
+                    	attrv.set_drag_param('dragging',target); //赋值到拖动目标
+                		attrv.set_drag_param('area',$(target).attr('q_drag'));//1---first;2---center;3---last
+                		var drag_g = $(target).parent();
+                    	attrv.set_drag_param('drag_g',drag_g); //赋值到拖动目标--parent
+                    	if(attrv.get_svg_param('ifLine')){
+	                    	attrv.set_drag_param('drag_first',drag_g.children('circle[q_drag=1]')[0]); //赋值到拖动目标
+	                    	attrv.set_drag_param('drag_last',drag_g.children('circle[q_drag=3]')[0]); //赋值到拖动目标
+	                    	attrv.set_drag_param('drag_center',drag_g.children('circle[q_drag=2]')[0]); //赋值到拖动目标
+	                    	attrv.set_drag_param('drag_path',drag_g.children('.svg_path')[0]); //赋值到拖动目标
+                    	}
+                    	attrv.set_drag_param('drag_text',drag_g.children('text')[0]); //赋值到拖动目标
+                    	
+                    	if(attrv.get_svg_param('ifLine')){
+                    		attrv.set_XY('first',attrv.get_Drag_param('drag_first').attributes.cx.value,attrv.get_Drag_param('drag_first').attributes.cy.value);//设置first点的位置
+							attrv.set_XY('last',attrv.get_Drag_param('drag_last').attributes.cx.value,attrv.get_Drag_param('drag_last').attributes.cy.value);//设置last点的位置
+							attrv.set_XY('center',attrv.get_Drag_param('drag_center').attributes.cx.value,attrv.get_Drag_param('drag_center').attributes.cy.value);//设置center点的位置
+                    	}
+						
+						attrv.set_XY('texts',attrv.get_Drag_param('drag_text').attributes.x.value,attrv.get_Drag_param('drag_text').attributes.y.value);//设置text点的位置
+	                }
+	                break;
+	            case "mousemove":
+	                if(attrv.get_Drag_param('dragging')){ //当有拖动目标时执行
+	                	if(event.target.farthestViewportElement == attrv.get_svg()){
+	                		switch(attrv.get_Drag_param('area')){
+		                		case '1' ://拖动first
+		                		attrv.set_XY('last',event.offsetX*1 + attrv.get_XY('last').x*1 - attrv.get_XY('first').x,event.offsetY*1 + attrv.get_XY('last').y*1 - attrv.get_XY('first').y);//设置last点的位置
+		                		attrv.set_XY('center',event.offsetX*1 + attrv.get_XY('center').x*1 - attrv.get_XY('first').x,event.offsetY*1 + attrv.get_XY('center').y*1 - attrv.get_XY('first').y);//设置last点的位置
+		                		attrv.set_XY('texts',event.offsetX*1 + attrv.get_XY('texts').x*1 - attrv.get_XY('first').x,event.offsetY*1 + attrv.get_XY('texts').y*1 - attrv.get_XY('first').y);//设置last点的位置
+		                		attrv.set_XY('first',event.offsetX,event.offsetY);//设置first点的位置--必须最后设置
+		                		setRemove();
+					            break;
+					            case '2'://拖动center
+					            attrv.set_XY('center',event.offsetX,event.offsetY);//设置中心点的位置
+								d_str = 'M'+attrv.get_XY('first').x+' '+attrv.get_XY('first').y+' L'+event.offsetX+' '+event.offsetY+' L'+attrv.get_XY('last').x+' '+attrv.get_XY('last').y;
+		            			attrv.get_Drag_param('drag_path').setAttributeNS(null,'d',d_str);
+					            attrv.get_Drag_param('drag_center').setAttributeNS(null,'cx',event.offsetX);
+					            attrv.get_Drag_param('drag_center').setAttributeNS(null,'cy',event.offsetY);
+					            break;
+					            case '3'://拖动last
+								attrv.set_XY('last',event.offsetX,event.offsetY);//设置first点的位置
+					            attrv.get_Drag_param('dragging').setAttributeNS(null,'cx',event.offsetX);
+					            attrv.get_Drag_param('dragging').setAttributeNS(null,'cy',event.offsetY);
+					            resetPath();
+					            break;
+					            case '4'://拖动text
+								attrv.set_XY('texts',event.offsetX,event.offsetY);//设置first点的位置
+					            attrv.get_Drag_param('dragging').setAttributeNS(null,'x',attrv.get_XY('texts').x);
+					            attrv.get_Drag_param('dragging').setAttributeNS(null,'y',attrv.get_XY('texts').y);
+					            break;
+		                	}
+	                	}else{
+		                	console.log($(target))
+	                	}
+	                }
+	                break;
+	            case "mouseup":
+	                // 清空拖动目标
+	                attrv.set_drag_param('dragging',null);
+//	                attrv.reset_XY();
+	                break;
+	            }
+	        };
+	        return {
+	            dragStart: function() {
+	                // 绑定事件
+	                VVG.DOM.bindEvent(document, "mousedown", drag);
+	                VVG.DOM.bindEvent(document, "mousemove", drag);
+	                VVG.DOM.bindEvent(document, "mouseup", drag);
+	            }
+	        }
+	    };
+//	    $.each($('circle'),function(index,element){
+//	    	DragDrop($(element)).dragStart();
+//	    })
+	    function resetPath(){//重置画直线
+            attrv.get_Drag_param('drag_center').setAttributeNS(null,'cx',(attrv.get_XY('first').x*1 + attrv.get_XY('last').x*1)/2);
+            attrv.get_Drag_param('drag_center').setAttributeNS(null,'cy',(attrv.get_XY('first').y*1 + attrv.get_XY('last').y*1)/2);
+	    	attrv.get_Drag_param('drag_path').setAttributeNS(null,'d','M'+attrv.get_XY('first').x+' '+attrv.get_XY('first').y+' L'+attrv.get_XY('last').x+' '+attrv.get_XY('last').y);
+	    };
+	    function setRemove(){//移动
+            attrv.get_Drag_param('drag_first').setAttributeNS(null,'cx',attrv.get_XY('first').x);
+            attrv.get_Drag_param('drag_first').setAttributeNS(null,'cy',attrv.get_XY('first').y);
+            attrv.get_Drag_param('drag_last').setAttributeNS(null,'cx',attrv.get_XY('last').x);
+            attrv.get_Drag_param('drag_last').setAttributeNS(null,'cy',attrv.get_XY('last').y);
+            attrv.get_Drag_param('drag_center').setAttributeNS(null,'cx',attrv.get_XY('center').x);
+            attrv.get_Drag_param('drag_center').setAttributeNS(null,'cy',attrv.get_XY('center').y);
+            attrv.get_Drag_param('drag_text').setAttributeNS(null,'x',attrv.get_XY('texts').x);
+            attrv.get_Drag_param('drag_text').setAttributeNS(null,'y',attrv.get_XY('texts').y);
+	    	attrv.get_Drag_param('drag_path').setAttributeNS(null,'d','M'+attrv.get_XY('first').x+' '+attrv.get_XY('first').y+' L'+attrv.get_XY('center').x+' '+attrv.get_XY('center').y+' L'+attrv.get_XY('last').x+' '+attrv.get_XY('last').y);
+	    }
+	</script>
+</html>
