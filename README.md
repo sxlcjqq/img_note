@@ -2,6 +2,7 @@
 用canvas给图片加注释，并下载图片
 简单使用步骤：
 1.选择要加注释的图片
+[image](https://github.com/sxlcjqq/img_note/blob/master/img/1.png)
 2.修改字体选项，注释序号及文字等
 3.点击“添加注释”
 4.选择“左”时。拖动中间小球的效果
